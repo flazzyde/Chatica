@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { GitCommit, GitBranch, Layers, ArrowUpRight, Rss, Calendar, Key, AlertCircle, Loader2, Globe, GitFork, ExternalLink, Tag, Newspaper, X, Clock } from "lucide-react";
+import { motion } from "motion/react";
+import { GitCommit, GitBranch, Layers, ArrowUpRight, Rss, Calendar, Key, AlertCircle, Loader2, Globe, GitFork, ExternalLink, Tag, X, Clock } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -36,14 +36,6 @@ interface GitHubIssue {
   labels: { name: string }[];
   html_url: string;
   user: { login: string };
-}
-
-interface RssItem {
-  title: string;
-  link: string;
-  pubDate: string;
-  contentSnippet: string;
-  content: string; // full HTML content
 }
 
 /* ------------------------------------------------------------------ */
@@ -82,38 +74,10 @@ function stripHtml(html: string): string {
 }
 
 /* ------------------------------------------------------------------ */
-/*  RSS Parser (parses Atom feed into RssItem[])                       */
+/*  Modal Component for Issue details                                  */
 /* ------------------------------------------------------------------ */
 
-async function fetchRssFeed(url: string): Promise<RssItem[]> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`RSS fetch failed: ${res.status}`);
-  const xml = await res.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, "text/xml");
-  const entries = doc.querySelectorAll("entry");
-  const items: RssItem[] = [];
-  entries.forEach((entry) => {
-    const title = entry.querySelector("title")?.textContent ?? "";
-    const link = entry.querySelector("link[rel=\"alternate\"]")?.getAttribute("href") ?? entry.querySelector("link")?.getAttribute("href") ?? "";
-    const pubDate = entry.querySelector("published")?.textContent ?? entry.querySelector("updated")?.textContent ?? "";
-    const rawContent = entry.querySelector("content")?.textContent ?? entry.querySelector("summary")?.textContent ?? "";
-    items.push({
-      title,
-      link,
-      pubDate,
-      contentSnippet: stripHtml(rawContent).substring(0, 200),
-      content: rawContent,
-    });
-  });
-  return items;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Modal Component                                                    */
-/* ------------------------------------------------------------------ */
-
-function RssModal({ item, onClose }: { item: RssItem; onClose: () => void }) {
+function IssueModal({ issue, onClose }: { issue: GitHubIssue; onClose: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
@@ -121,76 +85,78 @@ function RssModal({ item, onClose }: { item: RssItem; onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8"
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8"
+        initial={{ opacity: 0, scale: 0.95, y: 30 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 30 }}
+        transition={{ type: "spring", damping: 28, stiffness: 260 }}
+        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-2xl"
       >
-        {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
-        {/* Panel */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 30 }}
-          transition={{ type: "spring", damping: 28, stiffness: 260 }}
-          className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-2xl"
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 z-10 p-2 rounded-xl bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 transition-colors"
         >
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-5 right-5 z-10 p-2 rounded-xl bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 transition-colors"
-          >
-            <X size={16} />
-          </button>
+          <X size={16} />
+        </button>
 
-          {/* Content */}
-          <div className="p-8 sm:p-10 space-y-6">
-            {/* Meta info */}
-            <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
-              <span className="flex items-center gap-1.5">
-                <Calendar size={12} />
-                {formatDateFull(item.pubDate)}
-              </span>
-              <span className="w-1 h-1 rounded-full bg-neutral-300" />
-              <span className="flex items-center gap-1.5">
-                <Clock size={12} />
-                Article
-              </span>
-            </div>
-
-            {/* Title */}
-            <h2 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-black dark:text-white">
-              {item.title}
-            </h2>
-
-            {/* Divider */}
-            <div className="h-px bg-neutral-200 dark:bg-neutral-800" />
-
-            {/* Full content — rendered as HTML */}
-            <div
-              className="prose prose-sm dark:prose-invert max-w-none prose-p:text-neutral-700 dark:prose-p:text-neutral-300 prose-a:text-amber-500 prose-headings:text-black dark:prose-headings:text-white"
-              dangerouslySetInnerHTML={{ __html: item.content }}
-            />
-
-            {/* External link */}
-            <div className="pt-4">
-              <a
-                href={item.link}
-                target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors"
-              >
-                <ArrowUpRight size={12} />
-                Open original
-              </a>
-            </div>
+        <div className="p-8 sm:p-10 space-y-6">
+          <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
+            <span className="flex items-center gap-1.5">
+              <Calendar size={12} />
+              {formatDateFull(issue.created_at)}
+            </span>
+            <span className="w-1 h-1 rounded-full bg-neutral-300" />
+            <span className="flex items-center gap-1.5">
+              <Clock size={12} />
+              #{issue.number} by {issue.user.login}
+            </span>
           </div>
-        </motion.div>
+
+          <h2 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-black dark:text-white">
+            {issue.title}
+          </h2>
+
+          {issue.labels.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {issue.labels.map((lbl) => (
+                <span key={lbl.name} className="font-mono text-[9px] uppercase tracking-wider bg-neutral-200/50 dark:bg-neutral-800/50 text-neutral-500 dark:text-neutral-400 px-2.5 py-1 rounded-full">
+                  {lbl.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="h-px bg-neutral-200 dark:bg-neutral-800" />
+
+          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:text-neutral-700 dark:prose-p:text-neutral-300 prose-a:text-amber-500">
+            {issue.body ? (
+              <p>{issue.body}</p>
+            ) : (
+              <p className="text-neutral-400 italic">No description provided.</p>
+            )}
+          </div>
+
+          <div className="pt-4">
+            <a
+              href={issue.html_url}
+              target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors"
+            >
+              <ArrowUpRight size={12} />
+              View on GitHub
+            </a>
+          </div>
+        </div>
       </motion.div>
-    </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -206,10 +172,9 @@ export function Pulse() {
   const [releases, setReleases] = useState<GitHubRelease[]>([]);
   const [repoInfo, setRepoInfo] = useState<RepoInfo | null>(null);
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
-  const [rssItems, setRssItems] = useState<RssItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedRssItem, setSelectedRssItem] = useState<RssItem | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<GitHubIssue | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -239,13 +204,6 @@ export function Pulse() {
         setReleases(releasesData);
         setRepoInfo(repoData);
         setIssues(issuesData.filter((i) => !i.html_url.includes("/pull/")));
-
-        try {
-          const rss = await fetchRssFeed(`/feed.xml`);
-          setRssItems(rss.slice(0, 5));
-        } catch {
-          // optional
-        }
       } catch (err: unknown) {
         if (err instanceof Error && err.name !== "AbortError") {
           setError(err.message);
@@ -292,7 +250,7 @@ export function Pulse() {
               System <span className="font-bold">Pulse</span>
             </h2>
             <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
-              Live data streamed directly from{" "}
+              Live data from{" "}
               <a
                 href={repoInfo?.html_url ?? `https://github.com/${OWNER}/${REPO}`}
                 target="_blank" rel="noopener noreferrer"
@@ -444,46 +402,6 @@ export function Pulse() {
               </a>
             </div>
 
-            {/* ---- RSS Feed with clickable popup ---- */}
-            {rssItems.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2.5 px-2">
-                  <Newspaper size={16} className="text-amber-500" />
-                  <h3 className="font-mono text-xs uppercase tracking-widest text-neutral-400 font-extrabold">RSS Feed</h3>
-                  <span className="font-mono text-[9px] text-neutral-500 ml-auto">{rssItems.length} entries</span>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
-                  {rssItems.map((item, rIdx) => (
-                    <motion.button
-                      key={item.link}
-                      onClick={() => setSelectedRssItem(item)}
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: rIdx * 0.1 }}
-                      className="p-5 rounded-2xl border border-black/5 dark:border-neutral-900 bg-white/20 dark:bg-neutral-950/20 backdrop-blur-sm hover:border-black/15 dark:hover:border-neutral-800 hover:bg-neutral-100/40 dark:hover:bg-neutral-900/40 transition-all duration-300 block text-left group w-full cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-wider text-neutral-400 mb-2">
-                        <Rss size={10} />
-                        <span>{formatDate(item.pubDate)}</span>
-                      </div>
-                      <h4 className="font-sans font-bold text-sm text-black dark:text-white group-hover:text-amber-500 transition-colors">
-                        {item.title}
-                      </h4>
-                      <p className="font-sans text-xs text-neutral-500 dark:text-neutral-450 mt-1 leading-relaxed line-clamp-2">
-                        {item.contentSnippet || "No description."}
-                      </p>
-                      <div className="mt-3 flex items-center gap-1 font-mono text-[9px] uppercase tracking-widest text-amber-500 group-hover:underline">
-                        <ArrowUpRight size={10} />
-                        Read full article
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* ---- GitHub Issues ---- */}
             <div className="space-y-4 pt-2">
               <div className="flex items-center gap-2.5 px-2">
@@ -499,15 +417,14 @@ export function Pulse() {
                   </div>
                 )}
                 {issues.map((issue, bIdx) => (
-                  <motion.a
+                  <motion.button
                     key={issue.number}
-                    href={issue.html_url}
-                    target="_blank" rel="noopener noreferrer"
+                    onClick={() => setSelectedIssue(issue)}
                     initial={{ opacity: 0, scale: 0.98 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: bIdx * 0.1 }}
-                    className="p-6 rounded-3xl border border-black/10 dark:border-neutral-900 bg-white/40 dark:bg-neutral-950/45 backdrop-blur-md hover:shadow-lg transition-all duration-300 group flex flex-col justify-between text-left min-h-[200px]"
+                    className="p-6 rounded-3xl border border-black/10 dark:border-neutral-900 bg-white/40 dark:bg-neutral-950/45 backdrop-blur-md hover:shadow-lg transition-all duration-300 group flex flex-col justify-between text-left min-h-[200px] w-full cursor-pointer"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-4 font-mono text-[9px] uppercase tracking-wider text-neutral-400">
@@ -531,10 +448,10 @@ export function Pulse() {
                       )}
                     </div>
                     <div className="mt-4 pt-4 border-t border-black/5 dark:border-neutral-900/60 flex items-center justify-between text-black dark:text-white font-mono text-[10px] uppercase font-extrabold tracking-widest group-hover:underline">
-                      <span>View on GitHub</span>
+                      <span>View details</span>
                       <ArrowUpRight size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     </div>
-                  </motion.a>
+                  </motion.button>
                 ))}
               </div>
 
@@ -551,9 +468,9 @@ export function Pulse() {
         </div>
       </div>
 
-      {/* ======== RSS Popup Modal ======== */}
-      {selectedRssItem && (
-        <RssModal item={selectedRssItem} onClose={() => setSelectedRssItem(null)} />
+      {/* ======== Issue Popup Modal ======== */}
+      {selectedIssue && (
+        <IssueModal issue={selectedIssue} onClose={() => setSelectedIssue(null)} />
       )}
     </>
   );
