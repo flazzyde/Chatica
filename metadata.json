@@ -1,0 +1,6 @@
+{
+  "name": "Chatica",
+  "description": "Chatica by Flazzy: Premium, serverless privacy client featuring local Tor integrity heuristics, real-time System Pulse feed, and sandboxed peer simulator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
