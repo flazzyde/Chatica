@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Chatica Pulse Feed</title>
+  <link href="https://github.com/flazzyde/chatica" rel="alternate"/>
+  <id>https://chatica.app/pulse</id>
+  <updated>2026-06-20T23:00:00Z</updated>
+  <author><name>Flazzy</name></author>
+
+  <entry>
+    <title>Why Chatica rejects Cloud Storage entirely</title>
+    <link href="https://github.com/flazzyde/chatica" rel="alternate"/>
+    <id>chatica-pulse-001</id>
+    <published>2026-06-15T10:00:00Z</published>
+    <updated>2026-06-15T10:00:00Z</updated>
+    <summary>Sovereignty cannot be negotiated. Read our detailed critique of modern web apps and why central servers are an unnecessary single point of failure.</summary>
+    <content type="html"><![CDATA[
+      <p>Sovereignty cannot be negotiated. Read our detailed critique of modern web apps and why central servers are an unnecessary single point of failure. Chatica operates entirely peer-to-peer with no cloud dependencies.</p>
+    ]]></content>
+  </entry>
+
+  <entry>
+    <title>Onion Routing &amp; Peer Discovery Mechanics</title>
+    <link href="https://github.com/flazzyde/chatica" rel="alternate"/>
+    <id>chatica-pulse-002</id>
+    <published>2026-05-22T14:30:00Z</published>
+    <updated>2026-05-22T14:30:00Z</updated>
+    <summary>A deep dive into how CHATICA clients safely communicate over Tor networks without revealing routing tables or machine hardware fingerprints.</summary>
+    <content type="html"><![CDATA[
+      <p>A deep dive into how CHATICA clients safely communicate over Tor networks without revealing routing tables or machine hardware fingerprints. This architecture ensures complete anonymity at the protocol level.</p>
+    ]]></content>
+  </entry>
+
+  <entry>
+    <title>v1.0.4-beta – The Sovereign Release</title>
+    <link href="https://github.com/flazzyde/chatica/releases/tag/v1.0.4-beta" rel="alternate"/>
+    <id>chatica-pulse-003</id>
+    <published>2026-06-18T09:00:00Z</published>
+    <updated>2026-06-18T09:00:00Z</updated>
+    <summary>Implemented full desktop rendering logic and offline localized keys configuration for the Sovereign Release.</summary>
+    <content type="html"><![CDATA[
+      <p>Implemented full desktop rendering logic &amp; offline localized keys configuration. This release marks a major milestone in local-first sovereignty.</p>
+    ]]></content>
+  </entry>
+
+</feed>

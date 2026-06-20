@@ -144,10 +144,10 @@ export function Pulse() {
         setRepoInfo(repoData);
         setIssues(issuesData.filter((i) => !i.html_url.includes("/pull/"))); // filter out PRs
 
-        // Also fetch the real RSS/Atom feed from GitHub
+        // Fetch the local Atom feed
         try {
-          const rss = await fetchRssFeed(`https://github.com/${OWNER}/${REPO}/releases.atom`);
-          setRssItems(rss.slice(0, 3));
+          const rss = await fetchRssFeed(`/feed.xml`);
+          setRssItems(rss.slice(0, 5));
         } catch {
           // RSS fetch is optional
         }
@@ -355,8 +355,8 @@ export function Pulse() {
             <div className="space-y-4">
               <div className="flex items-center gap-2.5 px-2">
                 <Newspaper size={16} className="text-amber-500" />
-                <h3 className="font-mono text-xs uppercase tracking-widest text-neutral-400 font-extrabold">Live RSS Feed</h3>
-                <span className="font-mono text-[9px] text-neutral-500 ml-auto">via GitHub releases.atom</span>
+                <h3 className="font-mono text-xs uppercase tracking-widest text-neutral-400 font-extrabold">RSS Feed</h3>
+                <span className="font-mono text-[9px] text-neutral-500 ml-auto">{rssItems.length} entries</span>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
